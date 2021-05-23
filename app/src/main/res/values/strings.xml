@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">PhotoRemover</string>
+    <string name="service_event_title">Event service</string>
+    <string name="service_event_description">Event service running</string>
+    <string name="service_event_notification_channel_name">Event service</string>
+    <string name="new_photo_notification">New photo notification</string>
+    <string name="message_deletion_scheduled">Okay, deletion scheduled.</string>
+    <string name="service_schedule_channel_id">Schedule service</string>
+    <string name="service_schedule_description">Schedule service running</string>
+    <string name="service_schedule_title">Schedule service</string>
+</resources>
