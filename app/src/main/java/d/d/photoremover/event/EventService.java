@@ -114,8 +114,6 @@ public class EventService extends Service {
     }
 
     private void handleFileSend(Intent intent) {
-        // intent.setClass(this, FaceDetectionService.class);
-
         startService(intent);
     }
 
@@ -221,12 +219,6 @@ public class EventService extends Service {
                 cursor.close();
                 return;
             }
-
-            /*String columns = "";
-            for(int i = 0; i < cursor.getColumnCount(); i++){
-                columns += cursor.getString(i) + "   ";
-            }
-            Log.d(getClass().getName(), "columns: " + columns);*/
             int id = cursor.getInt(cursor.getColumnIndex(MediaColumns._ID));
             if (id > lastImageID) {
                 lastImageID = id;
@@ -271,17 +263,12 @@ public class EventService extends Service {
         for (PhotoDTO photoUri : files) {
             notifyNewImage(photoUri);
         }
-
-        // Intent intent = new Intent(getApplicationContext(), FaceDetectionService.class);
-        // intent.putExtra("EXTRA_FILES", files);
-
-        // startService(intent);
     }
 
-    class PhotoDTO {
-        private String uri;
-        private String filePath;
-        private Bitmap imageBitmap;
+    private class PhotoDTO {
+        private final String uri;
+        private final String filePath;
+        private final Bitmap imageBitmap;
 
         public PhotoDTO(String uri, String filePath, Bitmap imageBitmap) {
             this.uri = uri;
