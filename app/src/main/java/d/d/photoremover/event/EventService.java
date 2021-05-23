@@ -23,6 +23,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
 
 import d.d.photoremover.R;
 import d.d.photoremover.schedule.ScheduledPhoto;
@@ -37,10 +38,10 @@ public class EventService extends Service {
 
     public final static String ACTION_SCHEDULE_PHOTO_EXPIRY = "action_schedule_photo_expiry";
 
-    private int currentNotificationId = 3;
-
     private int NOTIFICATION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
     private int PHOTO_EXPIRY_DURATION = 10 * 1000; // 10 secs
+
+    private final String TAG = getClass().getName();
 
     @Override
     public void onCreate() {
@@ -93,16 +94,16 @@ public class EventService extends Service {
 
         if (Intent.ACTION_SEND.equals(intent.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction())) {
             handleFileSend(intent);
-        }
-
-        if(ACTION_SCHEDULE_PHOTO_EXPIRY.equals(intent.getAction())){
+        } else if(ACTION_SCHEDULE_PHOTO_EXPIRY.equals(intent.getAction())){
             int notificationId = intent.getIntExtra("NOTIFICATION_ID", -1);
+            Log.d(TAG, "notif id: " + notificationId);
             if(notificationId != -1){
                 notificationManager.cancel(notificationId);
                 Toast.makeText(this, getString(R.string.message_deletion_scheduled), Toast.LENGTH_SHORT).show();
             }
 
             ScheduledPhoto scheduledPhoto = (ScheduledPhoto) intent.getSerializableExtra("SCHEDULED_PHOTO");
+            Log.d(TAG, "uri: " + scheduledPhoto.getUri());
             scheduledPhoto.setExpiryDurationFromNow(this.PHOTO_EXPIRY_DURATION);
 
             intent.setClass(this, ScheduleService.class);
@@ -143,7 +144,9 @@ public class EventService extends Service {
     };
 
     private void notifyNewImage(PhotoDTO photo) {
-        int notificationId = currentNotificationId++;
+        int notificationId = new Random().nextInt(999999999);
+
+        Log.d(TAG, "notificationId: " + notificationId);
 
         Intent serviceIntent = new Intent(this, getClass());
         serviceIntent.setAction(ACTION_SCHEDULE_PHOTO_EXPIRY);
@@ -151,8 +154,10 @@ public class EventService extends Service {
         serviceIntent.putExtra("SCHEDULED_PHOTO", new ScheduledPhoto(
                 photo.getUri(),
                 photo.getFilePath(),
-                0
+                ScheduledPhoto.State.SCHEDULED
         ));
+
+        Log.d(TAG, "uri: "+ photo.getUri());
 
         PendingIntent deleteIntent = PendingIntent.getService(
                 this,

@@ -8,4 +8,8 @@
     <string name="service_schedule_channel_id">Schedule service</string>
     <string name="service_schedule_description">Schedule service running</string>
     <string name="service_schedule_title">Schedule service</string>
+    <string name="state_scheduled">Scheduled for deletion</string>
+    <string name="state_error_file_not_found">File not found</string>
+    <string name="state_error_file_not_writable">File not writable</string>
+    <string name="state_error_deletion_failed">Deleting the file failed</string>
 </resources>
