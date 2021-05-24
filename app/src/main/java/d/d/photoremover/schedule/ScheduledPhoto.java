@@ -88,6 +88,10 @@ public class ScheduledPhoto implements Serializable {
         this.setExpiryDate(System.currentTimeMillis() + duration);
     }
 
+    public long getExpiryDurationFromNow(){
+        return this.getExpiryDate() - System.currentTimeMillis();
+    }
+
     public State getState() {
         return state;
     }

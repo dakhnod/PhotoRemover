@@ -92,6 +92,8 @@ public class EventService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(getClass().getName(), "onStartCommand()");
 
+        if(intent == null) return START_STICKY;
+
         if (Intent.ACTION_SEND.equals(intent.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction())) {
             handleFileSend(intent);
         } else if(ACTION_SCHEDULE_PHOTO_EXPIRY.equals(intent.getAction())){
