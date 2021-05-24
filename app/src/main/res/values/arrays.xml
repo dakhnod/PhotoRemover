@@ -1,0 +1,35 @@
+<resources>
+    <string-array name="notification_durations">
+        <item>@string/duration_two_minutes</item>
+        <item>@string/duration_fifteen_minutes</item>
+        <item>@string/duration_one_hour</item>
+        <item>@string/duration_one_day</item>
+        <item>@string/duration_no_timeout</item>
+    </string-array>
+
+    <string-array name="notification_duration_values">
+        <item>120</item>
+        <item>900</item>
+        <item>3600</item>
+        <item>86400</item>
+        <item>0</item>
+    </string-array>
+
+    <string-array name="photo_lifetime_options">
+        <item>@string/duration_fifteen_minutes</item>
+        <item>@string/duration_two_hours</item>
+        <item>@string/duration_one_day</item>
+        <item>@string/duration_one_week</item>
+        <item>@string/duration_two_weeks</item>
+        <item>@string/duration_one_month</item>
+    </string-array>
+
+    <string-array name="photo_lifetime_option_values">
+        <item>900</item>
+        <item>7200</item>
+        <item>86400</item>
+        <item>604800</item>
+        <item>1209600</item>
+        <item>2592000</item>
+    </string-array>
+</resources>

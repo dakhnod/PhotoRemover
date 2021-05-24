@@ -14,6 +14,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -34,7 +36,7 @@ import d.d.photoremover.event.EventService;
 import d.d.photoremover.schedule.ScheduledPhoto;
 import d.d.photoremover.schedule.service.ScheduleService;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuItemClickListener {
     private List<ScheduledPhoto> scheduledPhotos = new ArrayList<>();
     private ScheduledPhotoAdapter adapter;
 
@@ -52,7 +54,26 @@ public class MainActivity extends AppCompatActivity {
         loadScheduledPhotos();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        for(int i = 0; i < menu.size(); i++){
+            menu.getItem(i).setOnMenuItemClickListener(this);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        if(item.getItemId() == R.id.menu_item_settings){
+            startActivity(new Intent(this, SettingsActivity.class));
+        }
+        return false;
+    }
+
     private void initViews(){
+        setSupportActionBar(findViewById(R.id.my_toolbar));
+
         ListView scheduledPhotosList = findViewById(R.id.list_scheduled_photos);
         adapter = new ScheduledPhotoAdapter(this, this.scheduledPhotos);
         scheduledPhotosList.setAdapter(adapter);

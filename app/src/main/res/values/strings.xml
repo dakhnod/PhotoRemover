@@ -12,4 +12,21 @@
     <string name="state_error_file_not_found">File not found</string>
     <string name="state_error_file_not_writable">File not writable</string>
     <string name="state_error_deletion_failed">Deleting the file failed</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="settings_title_notification">Notification</string>
+    <string name="settings_title_new_photo_notification">\'New Photo\' notification timeout</string>
+    <string name="duration_two_minutes">Two minutes</string>
+    <string name="duration_fifteen_minutes">15 Minutes</string>
+    <string name="duration_one_hour">One hour</string>
+    <string name="duration_one_day">24 Hours</string>
+    <string name="duration_no_timeout">No timeout</string>
+    <string name="settings_title_settings">Settings</string>
+    <string name="settings_title_delete_in_1">Delete in ... option 1</string>
+    <string name="settings_title_delete_in_2">Delete in ... option 2</string>
+    <string name="settings_title_delete_in_3">Delete in ... option 3</string>
+    <string name="duration_two_hours">Two hours</string>
+    <string name="duration_one_week">One wheek</string>
+    <string name="duration_two_weeks">Two weeks</string>
+    <string name="duration_one_month">One month</string>
+    <string name="notification_delete_photo_in">Delete this Photo in...</string>
 </resources>

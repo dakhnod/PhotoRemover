@@ -1,0 +1,38 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/settings_title_notification">
+        <ListPreference
+            app:defaultValue="0"
+            app:entries="@array/notification_durations"
+            app:entryValues="@array/notification_duration_values"
+            app:key="photo_new_notification_lifetime"
+            app:title="@string/settings_title_new_photo_notification"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            app:defaultValue="7200"
+            app:entries="@array/photo_lifetime_options"
+            app:entryValues="@array/photo_lifetime_option_values"
+            app:key="photo_lifetime_1"
+            app:title="@string/settings_title_delete_in_1"
+            app:useSimpleSummaryProvider="true"/>
+
+        <ListPreference
+            app:defaultValue="86400"
+            app:entries="@array/photo_lifetime_options"
+            app:entryValues="@array/photo_lifetime_option_values"
+            app:key="photo_lifetime_2"
+            app:title="@string/settings_title_delete_in_2"
+            app:useSimpleSummaryProvider="true"/>
+
+        <ListPreference
+            app:defaultValue="1209600"
+            app:entries="@array/photo_lifetime_options"
+            app:entryValues="@array/photo_lifetime_option_values"
+            app:key="photo_lifetime_3"
+            app:title="@string/settings_title_delete_in_3"
+            app:useSimpleSummaryProvider="true"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

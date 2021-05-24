@@ -6,6 +6,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.TypedArray;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -13,12 +15,15 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.provider.MediaStore.MediaColumns;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.preference.PreferenceManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +35,8 @@ import d.d.photoremover.schedule.ScheduledPhoto;
 import d.d.photoremover.schedule.service.ScheduleService;
 
 public class EventService extends Service {
+    private final int ACTION_COUNT = 3;
+
     private int lastImageID;
     private NotificationManager notificationManager;
 
@@ -37,9 +44,12 @@ public class EventService extends Service {
     private final String PHOTO_NOTIFICATION_ID = "photo_notification";
 
     public final static String ACTION_SCHEDULE_PHOTO_EXPIRY = "action_schedule_photo_expiry";
+    public final static String ACTION_PREFERENCE_CHANGE = "action_preference_change";
 
-    private int NOTIFICATION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
-    private int PHOTO_EXPIRY_DURATION = 10 * 1000; // 10 secs
+    private long notificationLifetime; // 2 minutes
+
+    private final long[] photoLifetimes = new long[ACTION_COUNT];
+    private final String[] lifetimeDescriptions = new String[ACTION_COUNT];
 
     private final String TAG = getClass().getName();
 
@@ -61,6 +71,39 @@ public class EventService extends Service {
                         .setOngoing(true)
                         .build()
         );
+        this.readPreferences();
+    }
+
+    private void readPreferences() {
+        Log.d(TAG, "readPreferences: reading preferences");
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        this.notificationLifetime = Long.parseLong(prefs.getString("photo_new_notification_lifetime", "0")) * 1000;
+
+        String[] defaultLifetimeStrings = {"7200", "86400", "1209600"};
+        String[] selectedLifetimeStrings = new String[ACTION_COUNT];
+        for (int i = 0; i < ACTION_COUNT; i++) {
+            selectedLifetimeStrings[i] = prefs.getString("photo_lifetime_" + (i + 1), defaultLifetimeStrings[i]);
+        }
+
+        TypedArray lifetimeOptionDescriptions = getResources().obtainTypedArray(R.array.photo_lifetime_options);
+        TypedArray lifetimeOptionValues = getResources().obtainTypedArray(R.array.photo_lifetime_option_values);
+
+        for (int i = 0; i < ACTION_COUNT; i++) {
+            for (int j = 0; j < lifetimeOptionValues.length(); j++) {
+                if (lifetimeOptionValues.getString(j).equals(selectedLifetimeStrings[i])) {
+                    this.lifetimeDescriptions[i] = lifetimeOptionDescriptions.getString(j);
+                    break;
+                }
+            }
+        }
+
+        lifetimeOptionDescriptions.recycle();
+        lifetimeOptionValues.recycle();
+
+        for (int i = 0; i < ACTION_COUNT; i++) {
+            this.photoLifetimes[i] = Long.parseLong(selectedLifetimeStrings[i]) * 1000;
+        }
     }
 
 
@@ -92,24 +135,28 @@ public class EventService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(getClass().getName(), "onStartCommand()");
 
-        if(intent == null) return START_STICKY;
+        if (intent == null) return START_STICKY;
 
         if (Intent.ACTION_SEND.equals(intent.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction())) {
             handleFileSend(intent);
-        } else if(ACTION_SCHEDULE_PHOTO_EXPIRY.equals(intent.getAction())){
+        } else if (ACTION_SCHEDULE_PHOTO_EXPIRY.equals(intent.getAction())) {
             int notificationId = intent.getIntExtra("NOTIFICATION_ID", -1);
             Log.d(TAG, "notif id: " + notificationId);
-            if(notificationId != -1){
+            if (notificationId != -1) {
                 notificationManager.cancel(notificationId);
                 Toast.makeText(this, getString(R.string.message_deletion_scheduled), Toast.LENGTH_SHORT).show();
             }
 
+            long photoLifetime = intent.getLongExtra("LIFETIME", 0);
+
             ScheduledPhoto scheduledPhoto = (ScheduledPhoto) intent.getSerializableExtra("SCHEDULED_PHOTO");
             Log.d(TAG, "uri: " + scheduledPhoto.getUri());
-            scheduledPhoto.setExpiryDurationFromNow(this.PHOTO_EXPIRY_DURATION);
+            scheduledPhoto.setExpiryDurationFromNow(photoLifetime);
 
             intent.setClass(this, ScheduleService.class);
             startService(intent);
+        } else if (ACTION_PREFERENCE_CHANGE.equals(intent.getAction())) {
+            this.readPreferences();
         }
 
         return START_STICKY;
@@ -157,40 +204,43 @@ public class EventService extends Service {
                 ScheduledPhoto.State.SCHEDULED
         ));
 
-        Log.d(TAG, "uri: "+ photo.getUri());
+        Notification.Action[] deleteActions = new Notification.Action[ACTION_COUNT];
+        for (int i = 0; i < ACTION_COUNT; i++) {
+            serviceIntent.putExtra("LIFETIME", this.photoLifetimes[i]);
 
-        PendingIntent deleteIntent = PendingIntent.getService(
-                this,
-                0,
-                serviceIntent,
-                0
-        );
+            PendingIntent deleteIntent = PendingIntent.getService(
+                    this,
+                    0,
+                    serviceIntent,
+                    0
+            );
 
-        Notification.Action[] deleteActions = new Notification.Action[]{
-                new Notification.Action
-                        .Builder(Icon.createWithResource(this, R.mipmap.ic_launcher), "in 2 weeks", deleteIntent)
-                        .build()
-        };
+            deleteActions[i] = new Notification.Action
+                    .Builder(Icon.createWithResource(this, R.mipmap.ic_launcher), this.lifetimeDescriptions[i], deleteIntent)
+                    .build();
+        }
 
-        Notification photoNotification =
+        Notification.Builder photoNotificationBuilder =
                 new Notification.Builder(this, PHOTO_NOTIFICATION_ID)
                         .setSmallIcon(R.mipmap.ic_launcher_round)
-                        .setContentTitle("New photo!")
-                        .setContentText("delete this photo?")
+                        .setContentTitle(getString(R.string.notification_delete_photo_in))
                         .setOngoing(false)
-                        .setTimeoutAfter(NOTIFICATION_TIMEOUT_MS)
-                        .setUsesChronometer(true)
-                        .setChronometerCountDown(true)
-                        .setWhen(System.currentTimeMillis() + NOTIFICATION_TIMEOUT_MS)
                         .setActions(deleteActions)
                         .setLargeIcon(photo.getImageBitmap())
                         .setStyle(
                                 new Notification.BigPictureStyle()
                                         .bigPicture(photo.getImageBitmap())
-                        )
-                        .build();
+                        );
 
-        notificationManager.notify(notificationId, photoNotification);
+        if (this.notificationLifetime != 0) {
+            photoNotificationBuilder
+                    .setTimeoutAfter(notificationLifetime)
+                    .setUsesChronometer(true)
+                    .setChronometerCountDown(true)
+                    .setWhen(System.currentTimeMillis() + notificationLifetime);
+        }
+
+        notificationManager.notify(notificationId, photoNotificationBuilder.build());
     }
 
     private void handleUri(Uri changeUri) {
