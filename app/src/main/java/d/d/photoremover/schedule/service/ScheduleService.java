@@ -51,7 +51,10 @@ public class ScheduleService extends Service {
 
         this.scheduleHelper = new ScheduleDatabaseHelper(this);
 
-        this.scheduledPhotos = scheduleHelper.getScheduledPhotos();
+        List<ScheduledPhoto> scheduledPhotos = scheduleHelper.getScheduledPhotos();
+
+        this.scheduledPhotos = new ArrayList<>(scheduledPhotos.size());
+        this.scheduledPhotos.addAll(scheduledPhotos);
 
         this.parseScheduledList();
     }
@@ -125,6 +128,7 @@ public class ScheduleService extends Service {
             return;
         }
 
+        // TODO: delete file properly
         boolean deletionSuccess = file.delete();
 
         if(!deletionSuccess){

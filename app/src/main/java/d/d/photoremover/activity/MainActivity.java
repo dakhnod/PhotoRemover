@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -150,12 +151,24 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
             ScheduledPhoto currentPhoto = getItem(position);
 
             try {
-                // TODO: photo orientation, maybe save in schedule table
                 InputStream previewInputStream = getContentResolver().openInputStream(Uri.parse(currentPhoto.getUri()));
                 Bitmap previewBitmap = BitmapFactory.decodeStream(previewInputStream);
                 previewInputStream.close();
 
-                previewImage.setImageBitmap(previewBitmap);
+                Matrix rotationMatrix = new Matrix();
+                rotationMatrix.postRotate(currentPhoto.getMetaData().getOrientation(), 0, 0);
+
+                previewImage.setImageBitmap(
+                        Bitmap.createBitmap(
+                                previewBitmap,
+                                0,
+                                0,
+                                previewBitmap.getWidth(),
+                                previewBitmap.getHeight(),
+                                rotationMatrix,
+                                false
+                                )
+                );
             } catch (IOException e) {
                 e.printStackTrace();
             }

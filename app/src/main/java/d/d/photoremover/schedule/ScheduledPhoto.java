@@ -3,6 +3,7 @@ package d.d.photoremover.schedule;
 import java.io.Serializable;
 
 import d.d.photoremover.R;
+import d.d.photoremover.photo.PhotoMetadata;
 
 public class ScheduledPhoto implements Serializable {
     private int id = -1;
@@ -10,6 +11,7 @@ public class ScheduledPhoto implements Serializable {
     private String filePath;
     private long expiryDate;
     private State state;
+    private PhotoMetadata metaData;
 
     public enum State{
         SCHEDULED(R.string.state_scheduled, false),
@@ -45,15 +47,20 @@ public class ScheduledPhoto implements Serializable {
         }
     }
 
-    public ScheduledPhoto(String uri, String filePath, State state, long expiryDate) {
+    public ScheduledPhoto(String uri, String filePath, State state, PhotoMetadata metaData, long expiryDate) {
         this.uri = uri;
         this.filePath = filePath;
         this.expiryDate = expiryDate;
         this.state = state;
+        this.metaData = metaData;
     }
 
-    public ScheduledPhoto(String uri, String filePath, State state) {
-        this(uri, filePath, state, -1);
+    public ScheduledPhoto(String uri, String filePath, State state, PhotoMetadata metaData) {
+        this(uri, filePath, state, metaData, -1);
+    }
+
+    public PhotoMetadata getMetaData() {
+        return metaData;
     }
 
     public String getUri() {

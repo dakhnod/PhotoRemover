@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import d.d.photoremover.photo.PhotoMetadata;
 import d.d.photoremover.schedule.ScheduledPhoto;
 
 public class ScheduleDatabaseHelper extends SQLiteOpenHelper {
@@ -23,6 +24,7 @@ public class ScheduleDatabaseHelper extends SQLiteOpenHelper {
     private final static String COLUMN_FILE_PATH = "file_path";
     private final static String COLUMN_EXPIRY_DATE = "expiry_date";
     private final static String COLUMN_STATE = "state";
+    private final static String COLUMN_ORIENTATION = "orientation";
     private final static int DATABASE_VERSION = 1;
 
     private final SQLiteDatabase database;
@@ -44,6 +46,7 @@ public class ScheduleDatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_FILE_PATH, photo.getFilePath());
         values.put(COLUMN_EXPIRY_DATE, photo.getExpiryDate());
         values.put(COLUMN_STATE, photo.getState().toString());
+        values.put(COLUMN_ORIENTATION, photo.getMetaData().getOrientation());
 
         if (photo.hasId()) {
             this.database.update(
@@ -69,8 +72,7 @@ public class ScheduleDatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    // TODO: maybe helper should just return List<>, not arrayList
-    public ArrayList<ScheduledPhoto> getScheduledPhotos() {
+    public List<ScheduledPhoto> getScheduledPhotos() {
         Cursor cursor = this.database.query(
                 TABLE_NAME_SCHEDULED_PHOTOS,
                 new String[]{
@@ -78,7 +80,8 @@ public class ScheduleDatabaseHelper extends SQLiteOpenHelper {
                         COLUMN_URI,
                         COLUMN_FILE_PATH,
                         COLUMN_EXPIRY_DATE,
-                        COLUMN_STATE
+                        COLUMN_STATE,
+                        COLUMN_ORIENTATION
                 },
                 null,
                 null,
@@ -99,12 +102,14 @@ public class ScheduleDatabaseHelper extends SQLiteOpenHelper {
         int pathIndex = cursor.getColumnIndex(COLUMN_FILE_PATH);
         int expiryIndex = cursor.getColumnIndex(COLUMN_EXPIRY_DATE);
         int stateIndex = cursor.getColumnIndex(COLUMN_STATE);
+        int orientationIndex = cursor.getColumnIndex(COLUMN_ORIENTATION);
 
         do {
             ScheduledPhoto scheduledPhoto = new ScheduledPhoto(
                     cursor.getString(uriIndex),
                     cursor.getString(pathIndex),
                     ScheduledPhoto.State.fromString(cursor.getString(stateIndex)),
+                    new PhotoMetadata(cursor.getInt(orientationIndex)),
                     cursor.getLong(expiryIndex)
             );
             scheduledPhoto.setId(
@@ -124,7 +129,8 @@ public class ScheduleDatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_URI + " TEXT NOT NULL UNIQUE," +
                 COLUMN_FILE_PATH + " TEXT NOT NULL," +
                 COLUMN_EXPIRY_DATE + " INTEGER NOT NULL," +
-                COLUMN_STATE + " TEXT NOT NULL" +
+                COLUMN_STATE + " TEXT NOT NULL," +
+                COLUMN_ORIENTATION + " INTEGER NOT NULL" +
                 ")");
     }
 

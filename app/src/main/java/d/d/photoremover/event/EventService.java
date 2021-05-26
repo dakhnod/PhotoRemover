@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.util.Random;
 
 import d.d.photoremover.R;
+import d.d.photoremover.photo.PhotoMetadata;
 import d.d.photoremover.schedule.ScheduledPhoto;
 import d.d.photoremover.schedule.service.ScheduleService;
 
@@ -204,7 +205,8 @@ public class EventService extends Service {
             serviceIntent.putExtra("SCHEDULED_PHOTO", new ScheduledPhoto(
                     photo.getUri(),
                     photo.getFilePath(),
-                    ScheduledPhoto.State.SCHEDULED
+                    ScheduledPhoto.State.SCHEDULED,
+                    photo.getMetadata()
             ));
 
             serviceIntent.putExtra("LIFETIME", this.photoLifetimes[i]);
@@ -292,12 +294,14 @@ public class EventService extends Service {
 
             Bitmap preview = null;
 
+            int orientation = 0;
+
             try {
                 InputStream stream = getContentResolver().openInputStream(Uri.parse(uri));
                 preview = BitmapFactory.decodeStream(stream);
                 stream.close();
 
-                int orientation = cursor.getInt(cursor.getColumnIndex("orientation"));
+                orientation = cursor.getInt(cursor.getColumnIndex("orientation"));
                 Matrix matrix = new Matrix();
                 matrix.postRotate(orientation);
                 preview = Bitmap.createBitmap(preview, 0, 0, preview.getWidth(), preview.getHeight(), matrix, true);
@@ -305,10 +309,12 @@ public class EventService extends Service {
                 e.printStackTrace();
             }
 
+            // TODO: handle exception case separately
             files[index++] = new PhotoDTO(
                     uri,
                     filePath,
-                    preview
+                    preview,
+                    new PhotoMetadata(orientation)
             );
         }
         cursor.close();
@@ -322,11 +328,13 @@ public class EventService extends Service {
         private final String uri;
         private final String filePath;
         private final Bitmap imageBitmap;
+        private final PhotoMetadata metadata;
 
-        public PhotoDTO(String uri, String filePath, Bitmap imageBitmap) {
+        public PhotoDTO(String uri, String filePath, Bitmap imageBitmap, PhotoMetadata metadata) {
             this.uri = uri;
             this.filePath = filePath;
             this.imageBitmap = imageBitmap;
+            this.metadata = metadata;
         }
 
         public String getUri() {
@@ -339,6 +347,10 @@ public class EventService extends Service {
 
         public Bitmap getImageBitmap() {
             return imageBitmap;
+        }
+
+        public PhotoMetadata getMetadata() {
+            return metadata;
         }
     }
 
