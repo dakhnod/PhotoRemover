@@ -16,6 +16,8 @@
     </string-array>
 
     <string-array name="photo_lifetime_options">
+        <!-- TODO: remove debug period -->
+        <item>15 seconds</item>
         <item>@string/duration_fifteen_minutes</item>
         <item>@string/duration_two_hours</item>
         <item>@string/duration_one_day</item>
@@ -25,6 +27,7 @@
     </string-array>
 
     <string-array name="photo_lifetime_option_values">
+        <item>15</item>
         <item>900</item>
         <item>7200</item>
         <item>86400</item>
