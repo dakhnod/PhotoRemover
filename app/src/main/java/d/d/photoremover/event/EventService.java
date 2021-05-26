@@ -38,6 +38,7 @@ public class EventService extends Service {
     private final int ACTION_COUNT = 3;
 
     private int lastImageID;
+    private int currentRequestCode = 0;
     private NotificationManager notificationManager;
 
     private final String SERVICE_NOTIFICATION_ID = "event_service";
@@ -195,24 +196,24 @@ public class EventService extends Service {
 
         Log.d(TAG, "notificationId: " + notificationId);
 
-        Intent serviceIntent = new Intent(this, getClass());
-        serviceIntent.setAction(ACTION_SCHEDULE_PHOTO_EXPIRY);
-        serviceIntent.putExtra("NOTIFICATION_ID", notificationId);
-        serviceIntent.putExtra("SCHEDULED_PHOTO", new ScheduledPhoto(
-                photo.getUri(),
-                photo.getFilePath(),
-                ScheduledPhoto.State.SCHEDULED
-        ));
-
         Notification.Action[] deleteActions = new Notification.Action[ACTION_COUNT];
         for (int i = 0; i < ACTION_COUNT; i++) {
+            Intent serviceIntent = new Intent(this, getClass());
+            serviceIntent.setAction(ACTION_SCHEDULE_PHOTO_EXPIRY);
+            serviceIntent.putExtra("NOTIFICATION_ID", notificationId);
+            serviceIntent.putExtra("SCHEDULED_PHOTO", new ScheduledPhoto(
+                    photo.getUri(),
+                    photo.getFilePath(),
+                    ScheduledPhoto.State.SCHEDULED
+            ));
+
             serviceIntent.putExtra("LIFETIME", this.photoLifetimes[i]);
 
             PendingIntent deleteIntent = PendingIntent.getService(
                     this,
-                    0,
+                    currentRequestCode++,
                     serviceIntent,
-                    0
+                    PendingIntent.FLAG_UPDATE_CURRENT
             );
 
             deleteActions[i] = new Notification.Action
