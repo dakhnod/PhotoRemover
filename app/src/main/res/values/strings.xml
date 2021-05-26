@@ -29,4 +29,10 @@
     <string name="duration_two_weeks">Two weeks</string>
     <string name="duration_one_month">One month</string>
     <string name="notification_delete_photo_in">Delete this Photo in...</string>
+    <string name="date_format_days">%d days</string>
+    <string name="date_format_days_hours">%d days, %d hours</string>
+    <string name="date_format_hours">%d hours</string>
+    <string name="date_format_hours_minutes">%d hours, %d minutes</string>
+    <string name="date_format_minutes">%d minutes</string>
+    <string name="date_format_seconds">%d seconds</string>
 </resources>
