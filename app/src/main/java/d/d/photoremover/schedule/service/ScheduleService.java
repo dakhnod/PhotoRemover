@@ -31,6 +31,8 @@ public class ScheduleService extends Service {
 
     private Handler handler;
 
+    private static final String TAG = "ScheduleService";
+
 
     @Override
     public void onCreate() {
@@ -93,6 +95,7 @@ public class ScheduleService extends Service {
         }
 
         for(ScheduledPhoto marked : markedForDelete){
+            // TODO: fix post deletion
             this.deleteScheduled(marked);
         }
 
@@ -108,7 +111,9 @@ public class ScheduleService extends Service {
     }
 
     private void startTimer(long expiryDate){
-        long delay = System.currentTimeMillis() - expiryDate;
+        long delay = expiryDate - System.currentTimeMillis();
+
+        Log.d(TAG, "startTimer: starting timer for " + delay);
 
         this.handler.postDelayed(timerRunnable, delay);
     }
