@@ -22,6 +22,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -91,6 +92,22 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
         ListView scheduledPhotosList = findViewById(R.id.list_scheduled_photos);
         adapter = new ScheduledPhotoAdapter(this, this.scheduledPhotos);
         scheduledPhotosList.setAdapter(adapter);
+        // TODO add popup menu
+        scheduledPhotosList.setOnItemClickListener((adapterView, view, itemPosition, l) -> {
+            PopupMenu menu = new PopupMenu(MainActivity.this, view,0);
+            menu.inflate(R.menu.photo_popup_menu);
+
+            menu.setOnMenuItemClickListener(menuItem -> {
+                if(menuItem.getItemId() == R.id.menu_item_save_from_deletion){
+                    // TODO handle that
+                }else if(menuItem.getItemId() == R.id.menu_item_delete_now){
+                    // TODO: add delete code
+                }
+                return true;
+            });
+
+            menu.show();
+        });
     }
 
     private void refreshList() {

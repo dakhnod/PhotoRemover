@@ -35,4 +35,7 @@
     <string name="date_format_hours_minutes">%d hours, %d minutes</string>
     <string name="date_format_minutes">%d minutes</string>
     <string name="date_format_seconds">%d seconds</string>
+    <string name="menu_title_save_from_deletion">Save from deletion</string>
+    <string name="menu_title_delete_now">Delete now</string>
+    <string name="message_error_request_delete_permission">unable to request delete permission</string>
 </resources>
