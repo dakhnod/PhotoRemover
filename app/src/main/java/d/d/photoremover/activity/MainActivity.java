@@ -3,11 +3,14 @@ package d.d.photoremover.activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -49,6 +52,8 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
         setContentView(R.layout.activity_main);
 
         initViews();
+
+        verifyStoragePermissions();
 
         startServices();
 
@@ -108,6 +113,23 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
 
             menu.show();
         });
+    }
+
+    private void verifyStoragePermissions() {
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    },
+                    0
+            );
+        }
     }
 
     private void refreshList() {
@@ -186,7 +208,7 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
                                 false
                                 )
                 );
-            } catch (IOException e) {
+            } catch (IOException | SecurityException e) {
                 e.printStackTrace();
             }
 

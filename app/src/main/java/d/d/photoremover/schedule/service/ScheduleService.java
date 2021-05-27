@@ -3,11 +3,15 @@ package d.d.photoremover.schedule.service;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.RecoverableSecurityException;
 import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -119,7 +123,29 @@ public class ScheduleService extends Service {
     }
 
     private void deleteScheduled(ScheduledPhoto photoToDelete){
-        String filePath = photoToDelete.getFilePath();
+        try{
+            getContentResolver().delete(Uri.parse(photoToDelete.getUri()), null, null);
+        }catch (RecoverableSecurityException e){
+            new Handler(getMainLooper()).post(() -> {
+                IntentSender intentSender = e.getUserAction().getActionIntent().getIntentSender();
+                try {
+                    startIntentSender(
+                            intentSender,
+                            null,
+                            0,
+                            0,
+                            0,
+                            null
+                    );
+                } catch (IntentSender.SendIntentException sendIntentException) {
+                    sendIntentException.printStackTrace();
+                }
+            });
+        }catch (SecurityException e){
+            Log.d(TAG, "deleteScheduled: exception");
+            e.printStackTrace();
+        }
+        /*String filePath = photoToDelete.getFilePath();
 
         File file = new File(filePath);
 
@@ -144,7 +170,7 @@ public class ScheduleService extends Service {
         Log.d(getClass().getName(), "deleting photo " + filePath);
 
         scheduledPhotos.remove(photoToDelete);
-        getContentResolver().notifyChange(Uri.parse(photoToDelete.getUri()), null, ContentResolver.NOTIFY_SYNC_TO_NETWORK);
+        getContentResolver().notifyChange(Uri.parse(photoToDelete.getUri()), null, ContentResolver.NOTIFY_SYNC_TO_NETWORK);*/
     }
 
     @Override
