@@ -6,9 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.app.RecoverableSecurityException;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -27,10 +30,12 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import d.d.photoremover.R;
@@ -44,7 +49,10 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
     private ScheduledPhotoAdapter adapter;
     private ScheduleService.ScheduleServiceBinder scheduleServiceBinder = null;
 
-    final String TAG = getClass().getName();
+    private final String TAG = getClass().getName();
+
+    private final int REQUEST_CODE_DELETE_PHOTO = 0;
+    private final int REQUEST_CODE_REQUEST_STORAGE_PERMISSION = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,11 +65,12 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
 
         startServices();
 
-        connectTOSchedulerService();
+        connectToSchedulerService();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(TAG, "onCreateOptionsMenu: ");
         getMenuInflater().inflate(R.menu.main_menu, menu);
         for (int i = 0; i < menu.size(); i++) {
             menu.getItem(i).setOnMenuItemClickListener(this);
@@ -80,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
     @Override
     protected void onResume() {
         super.onResume();
-        if(this.scheduleServiceBinder != null){
+        if (this.scheduleServiceBinder != null) {
             this.refreshList();
         }
     }
@@ -91,6 +100,45 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
         this.unbindService(schedulerConnection);
     }
 
+    private void deletePhtoto(Uri uriToDelete) {
+        ContentResolver resolver = getContentResolver();
+        try {
+            resolver.delete(uriToDelete, null, null);
+        } catch (RecoverableSecurityException e) {
+            IntentSender intentSender = e.getUserAction().getActionIntent().getIntentSender();
+            try {
+                startIntentSenderForResult(
+                        intentSender,
+                        REQUEST_CODE_DELETE_PHOTO,
+                        null,
+                        0,
+                        0,
+                        0
+                );
+            } catch (IntentSender.SendIntentException sendIntentException) {
+                sendIntentException.printStackTrace();
+                Toast.makeText(this, R.string.message_error_deleting_photo, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_DELETE_PHOTO) {
+            if (resultCode == RESULT_OK) {
+                // TODO: handle successfull deletion
+            } else {
+                Toast.makeText(this, R.string.message_error_deleting_photo, Toast.LENGTH_LONG).show();
+            }
+        } else if (requestCode == REQUEST_CODE_REQUEST_STORAGE_PERMISSION) {
+            if (resultCode != -1) {
+                Toast.makeText(this, R.string.message_error_missing_permission, Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+    }
+
     private void initViews() {
         setSupportActionBar(findViewById(R.id.my_toolbar));
 
@@ -99,14 +147,15 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
         scheduledPhotosList.setAdapter(adapter);
         // TODO add popup menu
         scheduledPhotosList.setOnItemClickListener((adapterView, view, itemPosition, l) -> {
-            PopupMenu menu = new PopupMenu(MainActivity.this, view,0);
+            PopupMenu menu = new PopupMenu(MainActivity.this, view, 0);
             menu.inflate(R.menu.photo_popup_menu);
 
             menu.setOnMenuItemClickListener(menuItem -> {
-                if(menuItem.getItemId() == R.id.menu_item_save_from_deletion){
+                if (menuItem.getItemId() == R.id.menu_item_save_from_deletion) {
                     // TODO handle that
-                }else if(menuItem.getItemId() == R.id.menu_item_delete_now){
-                    // TODO: add delete code
+                } else if (menuItem.getItemId() == R.id.menu_item_delete_now) {
+                    ScheduledPhoto photoToDelete = (ScheduledPhoto) adapterView.getItemAtPosition(itemPosition);
+                    this.deletePhtoto(Uri.parse(photoToDelete.getUri()));
                 }
                 return true;
             });
@@ -127,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
                             Manifest.permission.READ_EXTERNAL_STORAGE,
                             Manifest.permission.WRITE_EXTERNAL_STORAGE
                     },
-                    0
+                    REQUEST_CODE_REQUEST_STORAGE_PERMISSION
             );
         }
     }
@@ -152,7 +201,8 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
         }
     };
 
-    private void connectTOSchedulerService() {
+    private void connectToSchedulerService() {
+        Log.d(TAG, "connectToSchedulerService: connecting to scheduler service...");
         bindService(
                 new Intent(this, ScheduleService.class),
                 schedulerConnection,
@@ -171,7 +221,8 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
     }
 
     class ScheduledPhotoAdapter extends ArrayAdapter<ScheduledPhoto> {
-        private DateFormatter dateFormatter;
+        private final DateFormatter dateFormatter;
+        private final HashMap<ScheduledPhoto, Bitmap> previewCache = new HashMap<>();
 
         public ScheduledPhotoAdapter(Context context, List<ScheduledPhoto> scheduledPhotos) {
             super(context, R.layout.list_item_scheduled_photo, scheduledPhotos);
@@ -189,28 +240,49 @@ public class MainActivity extends AppCompatActivity implements MenuItem.OnMenuIt
 
             ScheduledPhoto currentPhoto = getItem(position);
 
-            try {
-                InputStream previewInputStream = getContentResolver().openInputStream(Uri.parse(currentPhoto.getUri()));
-                Bitmap previewBitmap = BitmapFactory.decodeStream(previewInputStream);
-                previewInputStream.close();
+            // TODO: offload preview loading to seperate thread
 
-                Matrix rotationMatrix = new Matrix();
-                rotationMatrix.postRotate(currentPhoto.getMetaData().getOrientation(), 0, 0);
+            if (previewCache.containsKey(currentPhoto)) {
+                Log.d(TAG, "getView: loading image preview from cache");
+                Bitmap previewBitmap = previewCache.get(currentPhoto);
+                if(previewBitmap == null){
+                    Log.d(TAG, "getView: cache didn't contain valid preview");
+                }else {
+                    previewImage.setImageBitmap(previewBitmap);
+                }
+            } else {
+                try {
+                    Log.d(TAG, "getView: loading image preview");
+                    InputStream previewInputStream = getContentResolver().openInputStream(Uri.parse(currentPhoto.getUri()));
+                    Bitmap previewBitmap = BitmapFactory.decodeStream(previewInputStream);
+                    previewInputStream.close();
 
-                previewImage.setImageBitmap(
-                        Bitmap.createBitmap(
-                                previewBitmap,
-                                0,
-                                0,
-                                previewBitmap.getWidth(),
-                                previewBitmap.getHeight(),
-                                rotationMatrix,
-                                false
-                                )
-                );
-            } catch (IOException | SecurityException e) {
-                e.printStackTrace();
+                    Matrix rotationMatrix = new Matrix();
+                    rotationMatrix.postRotate(currentPhoto.getMetaData().getOrientation(), 0, 0);
+                    float scaleFactor = 200.0f / previewBitmap.getWidth();
+                    rotationMatrix.postScale(scaleFactor, scaleFactor);
+
+                    previewBitmap = Bitmap.createBitmap(
+                            previewBitmap,
+                            0,
+                            0,
+                            previewBitmap.getWidth(),
+                            previewBitmap.getHeight(),
+                            rotationMatrix,
+                            false
+                    );
+
+                    Log.d(TAG, "getView: height: " + previewBitmap.getHeight() + "   width: " + previewBitmap.getWidth());
+
+                    previewCache.put(currentPhoto, previewBitmap);
+
+                    previewImage.setImageBitmap(previewBitmap);
+                } catch (IOException | SecurityException e) {
+                    e.printStackTrace();
+                    previewCache.put(currentPhoto, null);
+                }
             }
+
 
             ScheduledPhoto.State state = currentPhoto.getState();
             if (state.isError()) {
