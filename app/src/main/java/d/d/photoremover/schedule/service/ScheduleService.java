@@ -138,7 +138,8 @@ public class ScheduleService extends Service {
                             null
                     );
                 } catch (IntentSender.SendIntentException sendIntentException) {
-                    sendIntentException.printStackTrace();
+                    // TODO: handle not deletable pending photos
+                    // sendIntentException.printStackTrace();
                 }
             });
         }catch (SecurityException e){

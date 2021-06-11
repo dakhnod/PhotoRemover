@@ -38,4 +38,6 @@
     <string name="menu_title_save_from_deletion">Save from deletion</string>
     <string name="menu_title_delete_now">Delete now</string>
     <string name="message_error_request_delete_permission">unable to request delete permission</string>
+    <string name="message_error_deleting_photo">error deleting photo</string>
+    <string name="message_error_missing_permission">requires storage permission in order to delete photos</string>
 </resources>
